@@ -1,20 +1,27 @@
-// /datos/tarifas.js
-
-// Tasas de instalación y factores regionales basados en la imagen
-
-export const REGIONES = [
-  "Antioquia",
-  "Quindío",
-  "Cundinamarca",
-  "Costa",
-  "Resto"
-];
+// src/datos/tarifas.js
 
 export const TIPOS_CLIENTE = [
   "Persona Natural",
   "Unidad Residencial",
   "Comercial"
 ];
+
+// Mapeo de Departamentos a Regiones de Tarifas
+export const getRegion = (departamento) => {
+  if (!departamento) return "Resto";
+  
+  const dep = departamento.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); // Normalizar texto
+
+  if (dep.includes("antioquia")) return "Antioquia";
+  if (dep.includes("quindio")) return "Quindío";
+  if (dep.includes("cundinamarca") || dep.includes("bogota")) return "Cundinamarca";
+  
+  // Lista de departamentos Costa
+  const costa = ["atlantico", "bolivar", "magdalena", "cesar", "cordoba", "sucre", "la guajira", "san andres"];
+  if (costa.some(c => dep.includes(c))) return "Costa";
+
+  return "Resto";
+};
 
 // Porcentaje de instalación sobre el valor del equipo
 export const TASA_INSTALACION = {
@@ -35,7 +42,6 @@ export const TASA_INSTALACION = {
 };
 
 // Tarifa de alquiler mensual ($/m3 de piscina)
-// Estructura: TARIFA_RENTA[TipoCliente][Region]
 export const TARIFA_RENTA_M3 = {
   "Persona Natural": {
     Antioquia: 6545,

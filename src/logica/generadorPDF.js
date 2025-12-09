@@ -1,74 +1,122 @@
 // src/logica/generadorPDF.js
 import jsPDF from "jspdf";
-import autoTable from 'jspdf-autotable'; // <--- CAMBIO 1: Importar la función
+import autoTable from 'jspdf-autotable';
 
-// Helper para formatear números
+// Helper para formatear dinero
 const formatCOP = (num) => {
-  return `$ ${new Intl.NumberFormat('es-CO').format(num.toFixed(0))}`;
+  return `$ ${new Intl.NumberFormat('es-CO').format(num.toFixed(0))}`;
 };
 
-export const generarPDF = (r) => { // r = resultado
-  const doc = new jsPDF();
-  
-  doc.setFontSize(18);
-  doc.text("Cotización Preliminar - Más Centígrados S.A.S.", 14, 22);
+export const generarPDF = (r, modo) => {
+  const doc = new jsPDF();
+  const datos = r.datosUsados;
+  
+  // Seleccionamos los datos según el modo (VENTA o RENTA)
+  const dataEco = modo === "VENTA" ? r.escenarioVenta : r.escenarioRenta;
+  
+  // Títulos y Lógica de Línea
+  const titulo = modo === "VENTA" ? "COTIZACIÓN DE VENTA" : "PLAN DE RENTA MENSUAL";
+  const lineaEquipo = modo === "VENTA" ? "Inverter" : "On/Off"; 
 
-  // A. CONDICIONES DE DISEÑO
-  doc.setFontSize(12);
-  doc.text("A. Condiciones de Diseño", 14, 40);
-  //                              <--- CAMBIO 2: Llamar como función
-  autoTable(doc, {
-    startY: 45,
-    head: [['Parámetro', 'Valor']],
-    body: [
-      ['Ciudad', r.datosUsados.Ciudad],
-      ['Temp. Ambiente (T_a)', `${r.datosUsados.T_a} °C`],
-      ['Humedad Relativa (HR)', `${r.datosUsados.HR} %`],
-      ['Volumen Piscina', `${r.datosUsados.V.toFixed(2)} m³`],
-      ['Temp. Objetivo (T_w)', `${r.datosUsados.T_w} °C`],
-      ['Usa Manta', r.datosUsados.usa_manta ? 'Sí' : 'No'],
-    ],
-  });
+  if (!dataEco) {
+    alert(`No hay opción disponible para ${modo}`);
+    return;
+  }
 
-  // B. SELECCIÓN DE EQUIPOS
-  let finalY = doc.lastAutoTable.finalY || 70; // (Esto sigue funcionando igual)
-  doc.text("B. Selección de Equipos", 14, finalY + 10);
-  //                              <--- CAMBIO 3: Llamar como función
-  autoTable(doc, {
-    startY: finalY + 15,
-    head: [['Cantidad', 'Referencia', 'Potencia (kW)', 'Línea']],
-    body: [
-      [
-        r.seleccion.equipos[0].cantidad,
-        r.seleccion.equipos[0].sku,
-        `${r.seleccion.equipos[0].potencia} kW c/u`,
-        r.seleccion.tipo,
-      ],
-    ],
-  });
+  // --- ENCABEZADO ---
+  doc.setFontSize(18);
+  doc.text(`${titulo} - Más Centígrados S.A.S.`, 14, 22);
+  
+  doc.setFontSize(10);
+  doc.text(`Servicio: ${datos.tipoCliente}`, 14, 30);
+  doc.text(`Región: ${dataEco.region}`, 14, 35);
+  doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 14, 40);
 
-  // C. VALORES COMERCIALES
-  finalY = doc.lastAutoTable.finalY;
-  doc.text("C. Valores Comerciales (COP)", 14, finalY + 10);
-  //                              <--- CAMBIO 4: Llamar como función
-  autoTable(doc, {
-    startY: finalY + 15,
-    head: [['Concepto', 'Valor']],
-    body: [
-      ['Valor base equipos', formatCOP(r.subtotal)],
-      ['Instalación', formatCOP(r.instalacion)],
-      ['IVA (19% sobre equipos)', formatCOP(r.iva)],
-    ],
-    foot: [
-      ['TOTAL PRELIMINAR', formatCOP(r.total)]
-    ],
-    footStyles: { fillColor: [220, 220, 220], textColor: 0, fontStyle: 'bold' },
-  });
+  // --- A. CONDICIONES DE DISEÑO ---
+  doc.setFontSize(12);
+  doc.text("Estimación según datos suministrados", 14, 50);
+  autoTable(doc, {
+    startY: 55,
+    head: [['Parámetro', 'Valor']],
+    body: [
+      ['Ubicación', `${datos.Ciudad}, ${datos.Departamento}`],
+      ['Temp. Ambiente / Humedad', `${datos.T_a} °C / ${datos.HR}%`],
+      ['Volumen', `${datos.V.toFixed(2)} m³`],
+      ['Temperatura Objetivo', `${datos.T_w} °C`],
+    ],
+    theme: 'grid', 
+    headStyles: { fillColor: [66, 66, 66] }
+  });
 
-  // ... Añadir observaciones ...
-  finalY = doc.lastAutoTable.finalY;
-  doc.setFontSize(8);
-  doc.text("Observaciones: Sujeto a visita técnica e inventario.", 14, finalY + 10);
+  // --- B. EQUIPOS SELECCIONADOS ---
+  let finalY = doc.lastAutoTable.finalY || 70;
+  doc.text("Equipos", 14, finalY + 10);
 
-  doc.save(`Cotizacion_Más_Centigrados_${r.datosUsados.Ciudad}.pdf`);
+  // Preparamos las filas dinámicamente
+  const filasEquipos = dataEco.equipo.equipos.map(eq => [
+    eq.cantidad,
+    eq.sku,
+    `${eq.potencia} kW`,
+    lineaEquipo,        
+    formatCOP(eq.precio) 
+  ]);
+
+  autoTable(doc, {
+    startY: finalY + 15,
+    head: [['Cant.', 'Referencia', 'Potencia', 'Línea', 'Precio Unit.']],
+    body: filasEquipos,
+    theme: 'striped',
+    headStyles: { fillColor: modo === "VENTA" ? [5, 150, 105] : [217, 119, 6] }
+  });
+
+  // --- C. PROPUESTA ECONÓMICA ---
+  finalY = doc.lastAutoTable.finalY;
+  doc.text("Valor estimado (COP)", 14, finalY + 10);
+
+  let cuerpoTabla = [];
+  let pieTabla = [];
+
+  if (modo === "VENTA") {
+    // Estructura para VENTA
+    cuerpoTabla = [
+      ['Valor Equipos (Subtotal)', formatCOP(dataEco.subtotal)],
+      ['Instalación (Mano de obra y materiales)', formatCOP(dataEco.instalacion)],
+      ['IVA (19% sobre equipos)', formatCOP(dataEco.iva)],
+    ];
+    pieTabla = [['TOTAL A PAGAR', formatCOP(dataEco.total)]];
+  } else {
+    // --- AQUÍ ESTÁ EL CAMBIO PARA RENTA ---
+    cuerpoTabla = [
+      ['Instalación Inicial (Pago Único)', formatCOP(dataEco.instalacionInicial)],
+      ['Canon Mensual (Subtotal)', formatCOP(dataEco.mensualidadSubtotal)], // Usamos la variable de subtotal
+      ['IVA Mensual (19%)', formatCOP(dataEco.ivaMensual)],                // Usamos la variable de IVA
+      ['Incluye', 'Mantenimiento preventivo y correctivo'],
+    ];
+    // En renta destacamos la mensualidad TOTAL (con IVA)
+    pieTabla = [['MENSUALIDAD', formatCOP(dataEco.mensualidad)]];
+  }
+
+  autoTable(doc, {
+    startY: finalY + 15,
+    head: [['Concepto', 'Valor']],
+    body: cuerpoTabla,
+    foot: pieTabla,
+    footStyles: { 
+        fillColor: [220, 220, 220], 
+        textColor: 0, 
+        fontStyle: 'bold', 
+        halign: 'right' 
+    },
+    columnStyles: {
+        1: { halign: 'right' } 
+    }
+  });
+
+  // Pie de página simple
+  finalY = doc.lastAutoTable.finalY;
+  doc.setFontSize(8);
+  doc.setTextColor(100);
+  doc.text("Observaciones: Cotización sujeta a visita técnica e inventario disponible.", 14, finalY + 10);
+
+  doc.save(`Cotizacion_${modo}_${datos.Ciudad}.pdf`);
 };

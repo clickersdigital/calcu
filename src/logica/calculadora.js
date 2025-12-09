@@ -2,6 +2,7 @@
 import * as C from '../datos/constantes';
 import { getClima } from '../datos/clima';
 import { seleccionarEquipos } from './selector'; 
+import { getRegion, TASA_INSTALACION, TARIFA_RENTA_M3 } from '../datos/tarifas';
 
 // --- PASO 1: CALCULAR Q_TOTAL (Física) ---
 
@@ -35,68 +36,91 @@ function calcularPerdidas(datos) {
   const Q_total_W = (Q_evap + Q_conv + Q_rad) * C.FACTOR_SEGURIDAD_QTOTAL;
   const Q_total = Q_total_W / 1000;
 
+  console.log('Q Total ', + Q_total)
+
   return { Q_total, A_p };
 }
 
-// --- PASO 2: CALCULAR RESTO DE VARIABLES (Financiera/Operativa) ---
+// --- PASO 2: FINANCIERA ---
+function calcularEscenarios(datosEntrada, Q_total, seleccionVenta, seleccionRenta) {
+  const { Departamento, tipoCliente, V, Precio_kWh, T_a, T_w } = datosEntrada;
+  const region = getRegion(Departamento);
+  const tasaInstVenta = TASA_INSTALACION.VENTA[region];
+  const tasaInstRenta = TASA_INSTALACION.RENTA[region];
+  const tarifaM3 = TARIFA_RENTA_M3[tipoCliente][region];
 
-function calcularResultados(datosEntrada, Q_total, seleccion) {
-  const { V, T_w, T_a, Precio_kWh } = datosEntrada;
-  const { P_cal } = seleccion; 
+  let COP_val = 5; 
+  if (T_a >= 26) COP_val = 6;
+  else if (T_a >= 21) COP_val = 5;
+  else if (T_a >= 13) COP_val = 4;
+  
+  // ESCENARIO VENTA
+  let escenarioVenta = null;
+  if (seleccionVenta) {
+    const p_elec = seleccionVenta.P_cal / COP_val;
+    const costo_dia = p_elec * C.HORAS_DIARIAS_TRABAJO * Precio_kWh;
+    const subtotal = seleccionVenta.precioBase;
+    const instalacion = subtotal * tasaInstVenta;
+    const iva = subtotal * C.PCT_IVA; 
+    const total = subtotal + instalacion + iva;
 
-  // 1. Energía Térmica (q_ter)
-  const Dtt = T_w - (T_a - 2);
-  const q_ter = V * C.CP * C.RO * Dtt * 0.0002777; // en kWh
+    escenarioVenta = {
+      equipo: seleccionVenta,
+      costo_dia,
+      subtotal,
+      instalacion,
+      iva,
+      total,
+      region
+    };
+  }
 
-  // 2. Tiempo Calentamiento (t_ob)
-  const Q_BC_efectiva = P_cal - Q_total;
-  const t_ob = Q_BC_efectiva > 0 ? q_ter / Q_BC_efectiva : -1; // en horas
+  // ESCENARIO RENTA (Aquí calculamos el IVA)
+  let escenarioRenta = null;
+  if (seleccionRenta) {
+    const p_elec = seleccionRenta.P_cal / COP_val;
+    const costo_dia_energia = p_elec * C.HORAS_DIARIAS_TRABAJO * Precio_kWh;
+    const precioBaseCalculo = seleccionRenta.precioBase;
+    const instalacionInicial = precioBaseCalculo * tasaInstRenta; 
 
-  // 3. Costo Operativo (COP)
-  let COP = 5; 
-  if (T_a >= 26) COP = 6;
-  else if (T_a >= 21) COP = 5;
-  else if (T_a >= 13) COP = 4;
+    // --- CÁLCULO DESGLOSADO ---
+    const mensualidadSubtotal = V * tarifaM3;     // Valor antes de IVA
+    const ivaMensual = mensualidadSubtotal * 0.19; // El IVA
+    const mensualidadTotal = mensualidadSubtotal + ivaMensual; // El Total
 
-  const P_elec = P_cal / COP;
-  const E_dia = P_elec * C.HORAS_DIARIAS_TRABAJO;
-  const Costo_dia = E_dia * Precio_kWh;
-  const Costo_mes = Costo_dia * 30;
+    escenarioRenta = {
+      equipo: seleccionRenta,
+      costo_dia_energia,
+      instalacionInicial,
+      mensualidadSubtotal, // Enviamos Subtotal
+      ivaMensual,          // Enviamos IVA
+      mensualidad: mensualidadTotal, // Enviamos Total
+      tarifaM3,
+      region
+    };
+  }
 
-  // 4. Cotización (Valores Comerciales)
-  const subtotal = seleccion.equipos[0].precio; // Asumiendo 1 equipo
-  const instalacion = subtotal * C.PCT_INSTALACION;
-  const iva = subtotal * C.PCT_IVA;
-  const total = subtotal + instalacion + iva;
-
-  return {
-    Q_total,
-    q_ter,
-    P_cal,
-    t_ob,
-    Costo_dia,
-    Costo_mes,
-    subtotal,
-    instalacion,
-    iva,
-    total,
-    seleccion,
-  };
+  return { escenarioVenta, escenarioRenta };
 }
 
-// --- FUNCIÓN PRINCIPAL (Orquestador) ---
-
 export function calcularCotizacionCompleta(datosEntrada) {
-  // 1. Preparar datos (Resolver Volumen, Clima, etc.)
   let V = datosEntrada.Volumen;
   let Pr_m_usada = C.PR_M_DEFAULT;
   
+  // Calcular Volumen si no existe
   if (!V && datosEntrada.Largo && datosEntrada.Ancho) {
     Pr_m_usada = datosEntrada.Profundidad || C.PR_M_DEFAULT;
     V = datosEntrada.Largo * datosEntrada.Ancho * Pr_m_usada;
   }
   
-  const clima = getClima(datosEntrada.Ciudad);
+  // LÓGICA DE CLIMA:
+  // 1. Obtenemos datos del JSON por si acaso
+  const climaJSON = getClima(datosEntrada.Departamento, datosEntrada.Ciudad);
+
+  // 2. Priorizamos los datos que vienen del FORMULARIO (editados), si no hay, usamos JSON
+  const T_a_final = datosEntrada.T_a !== "" ? parseFloat(datosEntrada.T_a) : climaJSON.T_a;
+  const HR_final = datosEntrada.HR !== "" ? parseFloat(datosEntrada.HR) : climaJSON.HR;
+
   const fs = datosEntrada.usa_manta ? 0.5 : 1.0;
 
   const datosCalculo = {
@@ -104,25 +128,34 @@ export function calcularCotizacionCompleta(datosEntrada) {
     V,
     Pr_m_usada,
     fs,
-    ...clima, // Añade T_a y HR
+    T_a: T_a_final, // Usamos el valor final
+    HR: HR_final,   // Usamos el valor final
   };
 
   // 2. Calcular Q_total (Física)
-  const { Q_total, A_p } = calcularPerdidas(datosCalculo);
+  // Asegúrate de tener la función calcularPerdidas importada o definida arriba
+  // Aquí la llamo asumiendo que está en el mismo archivo como te pasé antes
+  const { Q_total, A_p } = calcularPerdidas(datosCalculo); 
 
-  // 3. Seleccionar Equipos (Lógica externa en selector.js)
-  const { seleccionInverter } = seleccionarEquipos(Q_total);
+  // 3. Seleccionar equipos
+  const { seleccionVenta, seleccionRenta } = seleccionarEquipos(Q_total);
 
-  if (!seleccionInverter) {
-    return { error: "No se encontró equipo para la potencia requerida." };
+  if (!seleccionVenta && !seleccionRenta) {
+    return { error: "No se encontró equipo adecuado para la potencia requerida." };
   }
 
-  // 4. Calcular costos y tiempo
-  const resultados = calcularResultados(
+  // 4. Calcular Escenarios
+  // Asumiendo que calcularEscenarios está definida arriba
+  const resultados = calcularEscenarios(
     datosCalculo,
     Q_total,
-    seleccionInverter
+    seleccionVenta,
+    seleccionRenta
   );
 
-  return { ...resultados, datosUsados: datosCalculo, A_p };
+  return { 
+    ...resultados, 
+    Q_total,
+    datosUsados: datosCalculo 
+  };
 }
