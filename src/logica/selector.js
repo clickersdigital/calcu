@@ -12,6 +12,7 @@ function buscarCombinacion(Q_requerido, catalogoDisponible) {
 
   let equiposSeleccionados = [];
   let potenciaAcumulada = 0;
+  let btuAcumulados = 0;
   let precioAcumulado = 0;
   let cargaRestante = Q_requerido;
 
@@ -26,6 +27,7 @@ function buscarCombinacion(Q_requerido, catalogoDisponible) {
 
     const potenciaAportada = cantidadGrandes * equipoMasGrande.potencia;
     potenciaAcumulada += potenciaAportada;
+    btuAcumulados += cantidadGrandes * equipoMasGrande.btu; //<<<--- nueva variable
     precioAcumulado += cantidadGrandes * equipoMasGrande.precio;
     cargaRestante -= potenciaAportada;
   }
@@ -51,12 +53,14 @@ function buscarCombinacion(Q_requerido, catalogoDisponible) {
     }
 
     potenciaAcumulada += equipoFinal.potencia;
+    btuAcumulados += equipoFinal.btu;
     precioAcumulado += equipoFinal.precio;
   }
 
   return {
     equipos: equiposSeleccionados, // Array de objetos {sku, cantidad...}
     P_cal: potenciaAcumulada,      // Potencia Total Instalada
+    P_cal_btu: btuAcumulados, // <<---- Enviamos BTU
     precioBase: precioAcumulado    // Precio Total Base
   };
 }

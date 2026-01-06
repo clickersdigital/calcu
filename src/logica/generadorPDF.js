@@ -6,6 +6,7 @@ import autoTable from 'jspdf-autotable';
 const formatCOP = (num) => {
   return `$ ${new Intl.NumberFormat('es-CO').format(num.toFixed(0))}`;
 };
+const formatNumber = (num) => new Intl.NumberFormat('es-CO').format(num); //<<- helper sugerido
 
 export const generarPDF = (r, modo) => {
   const doc = new jsPDF();
@@ -52,18 +53,32 @@ export const generarPDF = (r, modo) => {
   let finalY = doc.lastAutoTable.finalY || 70;
   doc.text("Equipos", 14, finalY + 10);
 
-  // Preparamos las filas dinámicamente
-  const filasEquipos = dataEco.equipo.equipos.map(eq => [
-    eq.cantidad,
-    eq.sku,
-    `${eq.potencia} kW`,
-    lineaEquipo,        
-    formatCOP(eq.precio) 
-  ]);
+  const columnas = modo === "VENTA"
+    ? [['Cant.', 'Referencia', 'Capacidad', 'Línea', 'Precio Unit.']]
+    : [['Cant.', 'Referencia', 'Capacidad', 'Línea']];
 
+  // Preparamos las filas dinámicamente
+  const filasEquipos = dataEco.equipo.equipos.map(eq => {
+      // Datos base que siempre van
+      const fila = [
+        eq.cantidad,
+        eq.sku,
+        `${formatNumber(eq.btu)} BTU/h`, // Usando tu nueva variable de BTU
+        lineaEquipo
+      ];
+
+      // SOLO si es VENTA agregamos el precio al final del array
+      if (modo === "VENTA") {
+        fila.push(formatCOP(eq.precio));
+      }
+
+      return fila;
+    });
+
+  
   autoTable(doc, {
     startY: finalY + 15,
-    head: [['Cant.', 'Referencia', 'Potencia', 'Línea', 'Precio Unit.']],
+    head: columnas, // <--- Aquí pasamos la variable dinámica
     body: filasEquipos,
     theme: 'striped',
     headStyles: { fillColor: modo === "VENTA" ? [5, 150, 105] : [217, 119, 6] }

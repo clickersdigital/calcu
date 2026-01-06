@@ -181,8 +181,8 @@ function App() {
           <div className="tech-summary">
             {/* ... esto igual ... */}
              <div className="tech-item">
-                  <span>Potencia Req:</span>
-                  <strong>{resultado.Q_total.toFixed(1)} kW</strong>
+                  <span>Potencia requerida: </span>
+                  <strong>{new Intl.NumberFormat('es-CO').format(resultado.escenarioVenta?.equipo.P_cal_btu || 0)} BTU/h</strong>
                 </div>
                 <div className="tech-item">
                   <span>Clima Base:</span>
@@ -202,7 +202,7 @@ function App() {
                 <div className="equipos-list">
                   {resultado.escenarioVenta.equipo.equipos.map((eq, idx) => (
                     <p key={idx} className="model-sku">
-                      <strong>{eq.cantidad}x</strong> {eq.sku} ({eq.potencia} kW c/u)
+                      <strong>{eq.cantidad}x</strong> {eq.sku} ({new Intl.NumberFormat('es-CO').format(eq.btu)} BTU/h)
                     </p>
                   ))}
                 </div>
@@ -212,7 +212,7 @@ function App() {
                   <strong>{money(resultado.escenarioVenta.total)}</strong>
                 </div>
                 <div className="details-list">
-                   <p>⚡ Potencia Instalada: <strong>{resultado.escenarioVenta.equipo.P_cal} kW</strong></p>
+                   <p>⚡ Capacidad Total: <strong>{new Intl.NumberFormat('es-CO').format(resultado.escenarioVenta.equipo.P_cal_btu)} BTU/h</strong></p>
                    <p>🔋 Consumo Est.: <strong>{money(resultado.escenarioVenta.costo_dia * 30)} / mes</strong></p>
                 </div>
                 <button onClick={() => generarPDF(resultado, "VENTA")} className="btn-pdf btn-venta">
