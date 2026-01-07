@@ -1,0 +1,508 @@
+.chat-interface {
+    display: flex;
+    flex-direction: column;
+    height: 600px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    border: 1px solid #f1f5f9;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Header */
+.chat-header-bar {
+    padding: 15px 20px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ai-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(219, 239, 255);
+    border-color: #1d4ed8;
+}
+.ai-avatar { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+
+.ai-name { font-weight: 700; display: block; color: #1e293b; font-size: 0.95rem; }
+.ai-role { font-size: 0.75rem; color: #64748b; }
+
+.btn-icon {
+    background: transparent; border: none; color: #94a3b8; cursor: pointer;
+    padding: 8px; border-radius: 50%; transition: all 0.2s;
+}
+.btn-icon:hover { background: #f1f5f9; color: #ef4444; }
+
+/* Mensajes */
+.chat-messages-area {
+    flex: 1;
+    background: #f8fafc;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.msg-row { display: flex; align-items: flex-end; gap: 8px; max-width: 85%; }
+.msg-left { align-self: flex-start; }
+.msg-right { align-self: flex-end; flex-direction: row-reverse; }
+
+.avatar-mini {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: #e2e8f0; color: #64748b;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; flex-shrink: 0;
+}
+.avatar-mini.user { background: #dbeafe; color: #2563eb; }
+
+.msg-bubble {
+    padding: 12px 16px;
+    border-radius: 18px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    position: relative;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.bubble-ia {
+    background: white;
+    color: #334155;
+    border-bottom-left-radius: 4px;
+}
+
+.bubble-user {
+    background: #2563eb;
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+/* Typing Indicator */
+.typing-indicator {
+    padding: 12px 16px; background: white; border-radius: 18px;
+    display: flex; gap: 4px; align-items: center;
+}
+.typing-indicator span {
+    width: 6px; height: 6px; background: #cbd5e1; border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out both;
+}
+.typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+.typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+/* Quick Actions */
+.quick-actions {
+    padding: 10px 20px;
+    background: #f8fafc;
+    display: flex;
+    justify-content: center;
+}
+.btn-quick-action {
+    display: flex; align-items: center; gap: 8px;
+    background: linear-gradient(90deg, #10b981, #059669);
+    color: white; border: none; padding: 8px 16px;
+    border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+    cursor: pointer; transition: transform 0.2s;
+    box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+}
+.btn-quick-action:hover { transform: translateY(-2px); }
+
+/* Input Bar */
+.chat-input-bar {
+    padding: 15px;
+    background: white;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.chat-input-bar input {
+    flex: 1;
+    padding: 12px 20px;
+    border-radius: 24px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+}
+.chat-input-bar input:focus {
+    outline: none; border-color: #3b82f6; background: white;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.btn-send {
+    width: 44px; height: 44px;
+    border-radius: 50%; border: none;
+    background: #2563eb; color: white;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background 0.2s;
+}
+.btn-send:hover:not(:disabled) { background: #1d4ed8; }
+.btn-send:disabled { background: #e2e8f0; cursor: not-allowed; }
+
+/* ... estilos anteriores ... */
+
+.system-bubble {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    padding: 12px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 280px;
+}
+
+.system-title {
+    font-weight: bold;
+    color: #475569;
+    margin: 0 0 10px 0;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.download-buttons-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.btn-chat-download {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: white;
+    transition: opacity 0.2s;
+}
+
+.btn-chat-download:hover { opacity: 0.9; }
+/* Reutilizamos variables de color si existen, o hardcodeamos */
+.btn-chat-download.btn-venta { background-color: #059669; }
+.btn-chat-download.btn-renta { background-color: #d97706; }
+
+/* =========================================
+   ESTILOS DE LA TARJETA DE RESUMEN TÉCNICO
+   ========================================= */
+
+.contenedor-full-width {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start; /* Alineado a la izquierda */
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.cotizacion-summary-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 800px; /* Escritorio se mantiene en 800px */
+  border: 1px solid #f1f5f9;
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  overflow: hidden; /* Mantiene bordes redondeados */
+}
+
+/* 2. Cabecera (Ubicación y Volumen) */
+.summary-header {
+  background: #f8fafc;
+  padding: 12px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summary-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #1e293b;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.summary-badges {
+  display: flex;
+  gap: 8px;
+}
+
+.summary-badges span {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.summary-content {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  overflow-x: auto; /* Permite scroll si se pasa */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 4. Tarjeta Individual (Venta o Renta) */
+.scenario-box {
+  min-width: 280px; /* Ancho fijo para forzar el slide si no caben */
+  flex: 1;          /* Si hay espacio, se estiran */
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.scenario-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Bordes superiores de color según tipo */
+.scenario-box.venta { border-top: 5px solid #059669; } /* Verde */
+.scenario-box.renta { border-top: 5px solid #d97706; } /* Naranja */
+
+/* Título interno de la tarjeta */
+.card-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.card-title-row span:first-child {
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+/* Lista de Equipos */
+.eq-list {
+  margin-bottom: 12px;
+  background: #f8fafc;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.eq-item {
+  font-size: 0.85rem;
+  color: #334155;
+  margin-bottom: 4px;
+}
+.eq-item strong { color: #0f172a; }
+
+/* Detalles Extra (Grid pequeño) */
+.extra-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.extra-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.extra-item strong {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+}
+
+.extra-item span {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+/* Sección de Precio */
+.price-section {
+  text-align: center;
+  margin-top: auto; /* Empuja el precio al fondo antes del botón */
+  margin-bottom: 12px;
+  padding: 8px;
+  background: #eff6ff;
+  border-radius: 8px;
+  border: 1px solid #dbeafe;
+}
+
+.price-label {
+  display: block;
+  font-size: 0.7rem;
+  color: #3b82f6;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.price-val {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #1e40af;
+}
+
+/* Botones de Acción */
+.btn-action {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: filter 0.2s;
+}
+
+.btn-action:hover {
+  filter: brightness(110%);
+}
+
+.bg-green { background-color: #059669; }
+.bg-orange { background-color: #d97706; }
+
+/* Animación de entrada suave */
+.animate-fade-in {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* =========================================
+   RESPONSIVE: CHAT Y TARJETAS
+   ========================================= */
+/* Permitir que el resumen ocupe más espacio que un mensaje normal */
+.msg-row.msg-full-width {
+  max-width: 100% !important; /* Rompe la restricción del 85% */
+  width: 100%;
+}
+@media (max-width: 768px) {
+
+  /* 1. Reset del contenedor para que toque los bordes */
+  .contenedor-full-width {
+    width: 100vw; /* Forzamos ancho total de ventana */
+    margin-left: -20px; /* Compensamos el padding del .chat-messages-area (si tiene 20px) */
+    padding-left: 20px; /* Devolvemos el espacio visual */
+    padding-right: 0;   /* A la derecha queremos que el slider se salga */
+    box-sizing: border-box;
+  }
+
+  /* 2. Tarjeta transparente y sin bordes en móvil */
+  .cotizacion-summary-card {
+    max-width: 100%;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  .summary-header {
+    margin-right: 20px; /* Margen derecho para que no pegue al borde */
+    border-radius: 12px; /* Redondeado propio porque quitamos el del contenedor */
+    background: white;
+    border: 1px solid #e2e8f0;
+  }
+
+  /* 3. SLIDER REAL */
+  .summary-content {
+    display: flex;
+    gap: 15px;
+    padding: 10px 20px 20px 0; /* Padding derecho grande para facilitar el swipe */
+    
+    /* Scroll Snap para efecto magnético */
+    scroll-snap-type: x mandatory; 
+  }
+  .summary-content:has(.scenario-box:nth-child(2))::after {
+    content: '👆'; /* Icono de mano (puedes cambiarlo por '←' o una imagen) */
+    position: fixed; /* Fixed para que flote sobre el scroll */
+    right: 30px;     /* Posición inicial a la derecha */
+    bottom: 45%;     /* Centrado verticalmente respecto a la tarjeta */
+    font-size: 2rem;
+    
+    /* Diseño del indicador */
+    background: rgba(255, 255, 255, 0.9);
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    z-index: 10;
+    pointer-events: none; /* VITAL: Permite hacer click/scroll a través del icono */
+    
+    /* Configuración de la animación */
+    animation: swipe-hint-anim 2.5s ease-in-out infinite;
+  }
+
+  /* 4. LAS CAJAS INTERNAS (El secreto del éxito) */
+  .scenario-box {
+    /* flex-grow: 0, flex-shrink: 0, flex-basis: 85vw */
+    flex: 0 0 85vw; 
+    width: 85vw; /* Respaldo */
+    
+    scroll-snap-align: center; /* Se centra al soltar */
+    background: white; /* Asegurar fondo blanco */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Sombra propia */
+    
+    /* Corrección visual */
+    margin-right: 0; 
+  }
+}
+
+/* Animación de la mano deslizando */
+@keyframes swipe-hint-anim {
+  0% { opacity: 0; transform: translateX(20px); }
+  20% { opacity: 1; transform: translateX(0); }
+  50% { opacity: 1; transform: translateX(-40px); } /* Desliza a la izquierda */
+  80% { opacity: 0; transform: translateX(-40px); }
+  100% { opacity: 0; transform: translateX(-40px); }
+}
