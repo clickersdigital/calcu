@@ -28,12 +28,12 @@ export const TASA_INSTALACION = {
   VENTA: {
     "Persona Natural": { Antioquia: 0.10, Quindío: 0.15, Cundinamarca: 0.15, Costa: 0.20, Resto: 0.20 },
     "Unidad Residencial": { Antioquia: 0.12, Quindío: 0.15, Cundinamarca: 0.15, Costa: 0.20, Resto: 0.20 },
-    "Persona Jurídica": { Antioquia: 0.14, Quindío: 0.19, Cundinamarca: 0.19, Costa: 0.19, Resto: 0.24 }
+    "Comercial": { Antioquia: 0.14, Quindío: 0.19, Cundinamarca: 0.19, Costa: 0.19, Resto: 0.24 }
   },
   RENTA: {
     "Persona Natural": { Antioquia: 0.13, Quindío: 0.18, Cundinamarca: 0.18, Costa: 0.22, Resto: 0.18 },
     "Unidad Residencial": { Antioquia: 0.15, Quindío: 0.20, Cundinamarca: 0.20, Costa: 0.24, Resto: 0.20 },
-    "Persona Jurídica": { Antioquia: 0.17, Quindío: 0.22, Cundinamarca: 0.22, Costa: 0.26, Resto: 0.22 }
+    "Comercial": { Antioquia: 0.17, Quindío: 0.22, Cundinamarca: 0.22, Costa: 0.26, Resto: 0.22 }
   }
 };
 

@@ -1,131 +1,143 @@
-// src/servicios/gemini.js
 import { GoogleGenAI } from "@google/genai";
+import { validarUbicacion, getClima } from '../datos/clima';
 
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+const ai = new GoogleGenAI({ 
+  apiKey: import.meta.env.VITE_GEMINI_API_KEY 
+});
 
-// 1. ESQUEMA DE DATOS (Debe coincidir con tu datosForm en App.jsx)
-const jsonSchema = {
-  type: "OBJECT",
+// Esquema puro nativo de Gemini (OpenAPI 3.0 simplificado)
+const geminiSchema = {
+  type: "object",
   properties: {
     respuesta_chat: {
-      type: "STRING",
-      description: "Respuesta conversacional al usuario. No menciones precios.",
+      type: "string",
+      description: "Tu respuesta verbal al cliente. DEBE SER RICA, EMPÁTICA Y EXPERTA. Usa emojis."
     },
     datos_actualizados: {
-      type: "OBJECT",
+      type: "object",
       description: "Datos técnicos extraídos.",
       properties: {
-        nombreCliente: { type: "STRING" },
-        Ciudad: { type: "STRING", description: "Ciudad normalizada (ej: Bogotá, Cali)." },
-        Departamento: { type: "STRING", description: "Departamento inferido (ej: Cundinamarca, Valle del Cauca)." },
-        tipoCliente: { 
-          type: "STRING", 
-          enum: ["Persona Natural", "Unidad Residencial", "Comercial"]
-        },
-        // Clima (Si el usuario los sabe, sino null)
-        T_a: { type: "NUMBER", description: "Temp Ambiente si el usuario la conoce." },
-        HR: { type: "NUMBER", description: "Humedad Relativa si el usuario la conoce." },
-        
-        T_w: { type: "NUMBER", description: "Temperatura deseada del agua." },
-        
-        // Dimensiones
-        Volumen: { type: "NUMBER" },
-        Largo: { type: "NUMBER" },
-        Ancho: { type: "NUMBER" },
-        Profundidad: { type: "NUMBER" },
-        
-        // Manta (Booleano)
-        usa_manta: { type: "BOOLEAN", description: "True si usa manta térmica, False si no." },
-
-        // Acciones de cierre
-        accion: { type: "STRING", enum: ["COTIZAR", "CONTINUAR"] },
-        preferenciaCotizacion: { type: "STRING", enum: ["VENTA", "RENTA", "AMBAS"] }
+        nombreCliente: { type: ["string", "null"] },
+        Ciudad: { type: ["string", "null"] },
+        Departamento: { type: ["string", "null"] },
+        tipoCliente: { type: ["string", "null"], description: "Persona Natural, Unidad Residencial o Comercial" },
+        T_w: { type: ["number", "null"] },
+        T_a: { type: ["number", "null"] },
+        HR: { type: ["number", "null"] },
+        Largo: { type: ["number", "null"] },
+        Ancho: { type: ["number", "null"] },
+        Profundidad: { type: ["number", "null"] },
+        Volumen: { type: ["number", "null"] },
+        usa_manta: { type: ["boolean", "null"] },
+        accion: { type: ["string", "null"], description: "COTIZAR o CONTINUAR" },
+        preferenciaCotizacion: { type: ["string", "null"], description: "VENTA, RENTA o AMBAS" }
       },
-      nullable: true 
+      required: [
+        "nombreCliente", "Ciudad", "Departamento", "tipoCliente", 
+        "T_w", "T_a", "HR", "Largo", "Ancho", "Profundidad", 
+        "Volumen", "usa_manta", "accion", "preferenciaCotizacion"
+      ]
     }
   },
-  required: ["respuesta_chat"]
+  required: ["respuesta_chat", "datos_actualizados"]
 };
 
 export const enviarMensajeGemini = async (historial, contexto) => {
-  const { datos, sistema } = contexto;
+  const { datos } = contexto;
+
+  let climaContexto = "donde te encuentras";
+  if (datos.Ciudad) {
+      const info = getClima(datos.Departamento, datos.Ciudad);
+      if (info.found || info.T_a) {
+          climaContexto = `DETECTADO EN SISTEMA: ${info.T_a}°C / ${info.HR}% (Ya cargado en formulario)`;
+      }
+  }
 
   const systemPrompt = `
-  ERES: "Termo", Ingeniero Experto de "Más Centígrados S.A.S.".
+  ERES: "Sol", Ingeniero Senior en Climatización de Más Centígrados S.A.S.
+  UBICACIÓN: Tú Estás en un chat dentro de nuestra Web App mascentigrados.com
   
-  TU MISIÓN: Completar la ficha técnica siguiendo ESTRICTAMENTE este orden. No te saltes pasos.
-  
-  --- GUION PASO A PASO (NO AVANCES HASTA COMPLETAR EL ANTERIOR) ---
-  
-  1. NOMBRE: Si no lo tienes, saluda y pídelo.
-  
-  2. UBICACIÓN: 
-     - Pide la Ciudad. 
-     - INTERNAMENTE: Infiere el Departamento (Ej: Si dice "Medellín" -> Dept: "Antioquia").
-     - Guarda ambos en el JSON.
-  
-  3. CLIMA LOCAL:
-     - Pregunta: "¿Conoces la temperatura ambiente y humedad promedio de tu zona?".
-     - Si dice "NO" o "Ni idea": Dile "Tranquilo, usaré los datos satelitales promedio". (No guardes T_a ni HR, deja que el sistema use los automáticos).
-     - Si dice "SI" y da datos: Guárdalos en T_a y HR.
-
-  4. TIPO DE CLIENTE:
-     - Pregunta si es para uso personal, conjunto residencial o negocio (hotel/club).
-     - Mapea a: "Persona Natural", "Unidad Residencial" o "Comercial".
-     
-  5. TEMPERATURA DESEADA:
-     - Pregunta a qué temperatura quiere el agua.
-     - Recomendación: "Sugerimos 28°C-30°C".
-
-  6. DIMENSIONES:
-     - Pide volumen (m³) O medidas (Largo x Ancho).
-     - Si no sabe: Sugiere calcular con 50 m³.
-
-  7. USO DE MANTA (IMPORTANTE):
-     - Pregunta: "¿La piscina cuenta con manta térmica o cubierta?".
-     - Guarda "usa_manta": true/false.
-
-  8. CIERRE (SOLO AL TENER TODO LO ANTERIOR):
-     - Pregunta: "¿Deseas ver opción de COMPRA, RENTA o AMBAS?".
-     - RESPUESTA FINAL: Activa "accion": "COTIZAR".
+  --- TUS CUALIDADES ---
+  1. 🧠 **Experto Técnico:** Sabes que usamos Bombas de Calor (Aerotermia). Temp ideal piscina o jacuzzi: 28-30°C.
+  2. 🤝 **Empático:** Saludas por el nombre, usas emojis (🌊, ☀️), entiendes las dudas.
+  3. ⚡ **Resolutivo:** Si falta un dato y el usuario no sabe, sugiere el estándar.
+  4. Nunca respondes con más de 50 palabras. 
 
   --- ESTADO ACTUAL ---
-  - Nombre: ${datos.nombreCliente || 'Falta'}
-  - Ubicación: ${datos.Ciudad || 'Falta'}
-  - Manta: ${datos.usa_manta === true ? 'Sí' : datos.usa_manta === false ? 'No' : 'Falta preguntar'}
+  - Cliente: ${datos.nombreCliente || '...'}
+  - Ubicación: ${datos.Ciudad || '...'}
+  - Clima Base: ${climaContexto}
   
-  IMPORTANTE: 
-  - Si el usuario menciona una ciudad (ej: "Barranquilla"), DEBES devolver en el JSON: "Ciudad": "Barranquilla", "Departamento": "Atlántico". ¡Ayúdale al sistema!
+  --- GUION MAESTRO ---
+  1. **SALUDO Y NOMBRE:** Si no lo tienes, pídelo.
+  2. **UBICACIÓN:** Pide la Ciudad. 
+  3. **CLIMA (Temp y Humedad):** Dile: "He cargado los datos climáticos de tu zona, en ${climaContexto}. ¿Conoces la temperatura o humedad aproximada de tu sector?". Si dice "No", usa los datos satelitales.
+  4. **TIPO DE CLIENTE:** Pregunta si es para Casa, Conjunto, Hotel, etc.
+  5. **TEMPERATURA DESEADA:** Sugiere 28-30°C si es piscina y 36-39°C si jacuzzi.
+  6. **MEDIDAS:** Pide Volumen (m³) o medidas. 
+  7. **MANTA TÉRMICA:** ¿Usan cubierta en la noche?
+  8. **CIERRE:** Pregunta: "¿Te gustaría ver la propuesta de COMPRA, RENTA o AMBAS?". Al elegir, ACTIVA "accion": "COTIZAR".
+
+  Nunca des información que no sepas de la empresa. Sé siempre cálido y compórtate como lo haría un Colombiano decente.
   `;
 
-  const historialFormateado = [
-    { role: "user", parts: [{ text: systemPrompt }] },
-    ...historial.map(msg => ({
+  const contents = historial
+    .filter(msg => msg && msg.texto) 
+    .map(msg => ({
       role: msg.role === 'ia' ? 'model' : 'user',
-      parts: [{ text: msg.texto }]
-    }))
-  ];
+      parts: [{ text: String(msg.texto) }] 
+    }));
 
   try {
-    const chat = ai.chats.create({
-      model: "gemini-2.5-flash",
-      history: historialFormateado,
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: contents,
       config: {
+        systemInstruction: systemPrompt,
+        temperature: 0.5,
         responseMimeType: "application/json",
-        responseSchema: jsonSchema,
-      },
+        responseJsonSchema: geminiSchema,
+      }
     });
 
-    const result = await chat.sendMessage({
-      message: "Analiza el input. Sigue el guion. Si el usuario da un dato, ACTUALIZA EL JSON."
-    });
+    // Filtro para extraer el JSON puro y evadir alucinaciones de formato Markdown
+    let rawText = response.text;
+    if (rawText.includes('```')) {
+      rawText = rawText.replace(/```json\n?|```\n?/g, '').trim();
+    }
 
-    return JSON.parse(result.text);
+    const respuestaJSON = JSON.parse(rawText);
+    let datosIA = respuestaJSON.datos_actualizados || {};
+
+    // INYECCIÓN POST-PROCESAMIENTO
+    const ciudadParaBuscar = datosIA.Ciudad || datos.Ciudad;
+    const deptoParaBuscar = datosIA.Departamento || datos.Departamento;
+
+    if (ciudadParaBuscar) {
+        const ubiOficial = validarUbicacion(ciudadParaBuscar, deptoParaBuscar);
+        
+        if (ubiOficial.Ciudad) {
+            datosIA.Ciudad = ubiOficial.Ciudad;
+            datosIA.Departamento = ubiOficial.Departamento;
+
+            const climaReal = getClima(ubiOficial.Departamento, ubiOficial.Ciudad);
+
+            if (climaReal.T_a) {
+                if (!datosIA.T_a && !datos.T_a) datosIA.T_a = climaReal.T_a;
+                if (!datosIA.HR && !datos.HR) datosIA.HR = climaReal.HR;
+            }
+        }
+    }
+
+    return {
+        respuesta_chat: respuestaJSON.respuesta_chat,
+        datos_actualizados: datosIA
+    };
 
   } catch (error) {
     console.error("Gemini Error:", error);
     return { 
-      respuesta_chat: "Ocurrió un error de conexión. ¿Podrías repetirme eso?", 
+      respuesta_chat: "Disculpa, para confirmar. ¿Me podrías repetir ese último dato? 🙏", 
       datos_actualizados: null 
     };
   }

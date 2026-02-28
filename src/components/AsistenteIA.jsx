@@ -1,9 +1,10 @@
 // src/components/AsistenteIA.jsx
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, Trash2, Download, Settings } from 'lucide-react'; 
+import { Send, User, Bot, Trash2, Download, Settings, FileText } from 'lucide-react'; 
 import ReactMarkdown from 'react-markdown'; 
-import { enviarMensajeGroq } from '../servicios/groq'; 
+import { enviarMensajeGroq } from '../servicios/groq';
+import { enviarMensajeGemini } from '../servicios/gemini';
 import { generarPDF } from '../logica/generadorPDF'; 
 import { validarUbicacion } from '../datos/clima'; 
 import './AsistenteIA.css';
@@ -40,8 +41,16 @@ const ResumenCotizacion = ({ resultado, modo }) => {
                         {/* 1. Lista de Equipos */}
                         <div className="eq-list">
                             {resultado.escenarioVenta.equipo.equipos.map((eq, i) => (
-                                <div key={i} className="eq-item">
-                                    <strong>{eq.cantidad}x</strong> {eq.sku} <small>({fmtNum(eq.btu)} BTU/h)</small>
+                                <div key={i} className="eq-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span>
+                                        <strong>{eq.cantidad}x</strong> {eq.sku} <small>({fmtNum(eq.btu)} BTU/h)</small>
+                                    </span>
+                                    {eq.fichaTecnica && (
+                                        <a href={eq.fichaTecnica} target="_blank" rel="noopener noreferrer" className="btn-ficha" title="Ver Ficha Técnica">
+                                            <FileText size={16} />
+                                            <span>Ficha Técnica</span>
+                                        </a>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -85,9 +94,17 @@ const ResumenCotizacion = ({ resultado, modo }) => {
                         {/* 1. Lista de Equipos */}
                         <div className="eq-list">
                             {resultado.escenarioRenta.equipo.equipos.map((eq, i) => (
-                                <div key={i} className="eq-item">
-                                    <strong>{eq.cantidad}x</strong> {eq.sku}
-                                </div>
+                                <div key={i} className="eq-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span>
+                                        <strong>{eq.cantidad}x</strong> {eq.sku}
+                                    </span>
+                                    {eq.fichaTecnica && (
+                                        <a href={eq.fichaTecnica} target="_blank" rel="noopener noreferrer" className="btn-ficha" title="Ver Ficha Técnica">
+                                            <FileText size={16} />
+                                            <span>Ficha Técnica</span>
+                                        </a>
+                                    )}
+                                                                    </div>
                             ))}
                         </div>
 
@@ -159,9 +176,9 @@ export function AsistenteIA({ contextoGlobal, setDatosForm, mensajes, setMensaje
     setMensajes(nuevosMensajes);
     setCargando(true);
 
-    // Enviar a Groq
+    // Enviar a la IA
     const historialEnvio = nuevosMensajes.slice(-15);
-    const respuestaObj = await enviarMensajeGroq(historialEnvio, contextoGlobal);
+    const respuestaObj = await enviarMensajeGemini(historialEnvio, contextoGlobal);
     
     const textoIA = respuestaObj.respuesta_chat;
     const datosNuevos = respuestaObj.datos_actualizados;
