@@ -2,7 +2,7 @@
 
 
 // Constantes Físicas (Bloque 3)
-export const PR_M_DEFAULT = 1.35; // Profundidad media por defecto
+export const PR_M_DEFAULT = 1.4; // Profundidad media por defecto
 export const VV = 0.8;           // Velocidad viento (m/s)
 export const HFG = 2400;         // Entalpía vaporización
 export const EPS = 5.67e-8;      // Coeficiente emisividad

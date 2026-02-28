@@ -26,42 +26,38 @@ export const getRegion = (departamento) => {
 // Porcentaje de instalación sobre el valor del equipo
 export const TASA_INSTALACION = {
   VENTA: {
-    Antioquia: 0.10,
-    Quindío: 0.15,
-    Cundinamarca: 0.15,
-    Costa: 0.20,
-    Resto: 0.20
+    "Persona Natural": { Antioquia: 0.10, Quindío: 0.15, Cundinamarca: 0.15, Costa: 0.20, Resto: 0.20 },
+    "Unidad Residencial": { Antioquia: 0.12, Quindío: 0.15, Cundinamarca: 0.15, Costa: 0.20, Resto: 0.20 },
+    "Persona Jurídica": { Antioquia: 0.14, Quindío: 0.19, Cundinamarca: 0.19, Costa: 0.19, Resto: 0.24 }
   },
   RENTA: {
-    Antioquia: 0.13,
-    Quindío: 0.18,
-    Cundinamarca: 0.18,
-    Costa: 0.22,
-    Resto: 0.18
+    "Persona Natural": { Antioquia: 0.13, Quindío: 0.18, Cundinamarca: 0.18, Costa: 0.22, Resto: 0.18 },
+    "Unidad Residencial": { Antioquia: 0.15, Quindío: 0.20, Cundinamarca: 0.20, Costa: 0.24, Resto: 0.20 },
+    "Persona Jurídica": { Antioquia: 0.17, Quindío: 0.22, Cundinamarca: 0.22, Costa: 0.26, Resto: 0.22 }
   }
 };
 
 // Tarifa de alquiler mensual ($/m3 de piscina)
 export const TARIFA_RENTA_M3 = {
   "Persona Natural": {
-    Antioquia: 6545,
-    Quindío: 6217,
-    Cundinamarca: 7200,
-    Costa: 6545,
-    Resto: 7600
+    Antioquia: 7330,
+    Quindío: 6963,
+    Cundinamarca: 8050,
+    Costa: 8512,
+    Resto: 8200
   },
   "Unidad Residencial": {
-    Antioquia: 6872,
-    Quindío: 6527,
-    Cundinamarca: 7400,
-    Costa: 7800,
-    Resto: 7500
+    Antioquia: 7696,
+    Quindío: 7310,
+    Cundinamarca: 8288,
+    Costa: 8736,
+    Resto: 8400
   },
   "Comercial": {
-    Antioquia: 8872, 
-    Quindío: 6527,
-    Cundinamarca: 7400,
-    Costa: 7800,
-    Resto: 7500
+    Antioquia: 8050, 
+    Quindío: 7676,
+    Cundinamarca: 8624,
+    Costa: 8960,
+    Resto: 8680
   }
 };

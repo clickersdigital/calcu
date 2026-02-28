@@ -54,7 +54,7 @@ const ResumenCotizacion = ({ resultado, modo }) => {
                             </div>
                             <div className="extra-item">
                                 <strong>🔋 Consumo Est.</strong>
-                                <span>{money(resultado.escenarioVenta.costo_dia * 30)} / mes</span>
+                                <span>{money(resultado.escenarioVenta.costo_dia * 30 * 0.7)} / mes</span>
                             </div>
                             <div className="extra-item">
                                 <strong>Clima Base</strong>
@@ -107,7 +107,7 @@ const ResumenCotizacion = ({ resultado, modo }) => {
                             </div>
                             <div className="extra-item">
                                 <strong>🔋 Consumo Est.</strong>
-                                <span>{money(resultado.escenarioRenta.costo_dia_energia * 30)} / mes</span>
+                                <span>{money(resultado.escenarioRenta.costo_dia_energia * 30 * 0.7)} / mes</span>
                             </div>
                         </div>
 
