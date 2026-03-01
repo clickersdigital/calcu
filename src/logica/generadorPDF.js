@@ -35,7 +35,7 @@ export const generarPDF = (r, modo) => {
 
   // --- A. CONDICIONES DE DISEÑO ---
   doc.setFontSize(12);
-  doc.text("Estimación según datos suministrados", 14, 50);
+  doc.text("Cotización indicativa", 14, 50);
   autoTable(doc, {
     startY: 55,
     head: [['Parámetro', 'Valor']],
@@ -131,7 +131,11 @@ export const generarPDF = (r, modo) => {
   finalY = doc.lastAutoTable.finalY;
   doc.setFontSize(8);
   doc.setTextColor(100);
-  doc.text("Observaciones: Cotización sujeta a visita técnica e inventario disponible.", 14, finalY + 10);
+  doc.text(`
+  Esta cotización es de carácter informativo y preliminar. No genera obligación alguna para las partes y está sujeta a cambios técnicos,
+  logísticos, regulatorios, económicos y de importación. El precio final, alcance definitivo y cronograma serán definidos únicamente en
+  la propuesta comercial final, una vez realizadas las validaciones técnicas, logísticas y comerciales correspondiente.
+  `, 14, finalY + 10);
 
   doc.save(`Cotizacion_${modo}_${datos.Ciudad}.pdf`);
 };

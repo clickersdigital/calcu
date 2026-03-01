@@ -212,7 +212,7 @@ export function AsistenteIA({ contextoGlobal, setDatosForm, mensajes, setMensaje
         setDatosForm(prev => {
             const nuevoEstado = { ...prev, ...datosLimpios };
             if (nuevoEstado.Largo && nuevoEstado.Ancho && !nuevoEstado.Volumen) { 
-                 const prof = nuevoEstado.Profundidad || 1.35; 
+                 const prof = nuevoEstado.Profundidad || 1.4; 
                  nuevoEstado.Volumen = (nuevoEstado.Largo * nuevoEstado.Ancho * prof).toFixed(1);
             }
             return nuevoEstado;

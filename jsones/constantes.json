@@ -1,0 +1,12 @@
+{
+  "PR_M_DEFAULT": 1.4,
+  "VV": 0.8,
+  "HFG": 2400,
+  "EPS": 5.67e-8,
+  "CP": 4.186,
+  "RO": 998,
+  "PCT_INSTALACION": 0.20,
+  "PCT_IVA": 0.19,
+  "HORAS_DIARIAS_TRABAJO": 24,
+  "FACTOR_SEGURIDAD_QTOTAL": 1.2
+}

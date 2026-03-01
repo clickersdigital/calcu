@@ -1,0 +1,6 @@
+{
+  "nombreCliente": "", "Departamento": "", "Ciudad": "", "tipoCliente": "Persona Natural",
+  "Volumen": 50, "Largo": "", "Ancho": "", "Profundidad": "",
+  "T_w": 30, "T_a": "", "HR": "", "usa_manta": false,
+  "Precio_kWh": 700, "preferenciaCotizacion": "AMBAS"
+}

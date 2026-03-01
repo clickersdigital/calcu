@@ -1,60 +1,52 @@
 // src/App.jsx
 import { useState, useEffect } from 'react';
-import {  X } from 'lucide-react'; 
+import { X } from 'lucide-react'; 
 import { calcularCotizacionCompleta } from './logica/calculadora';
 import { getDepartamentos, getCiudadesPorDepartamento, getClima } from './datos/clima';
 import { getRegion } from './datos/tarifas';
+import { cargarEcosistema } from './servicios/firebase'; 
 import './App.css';
 
 import { FormularioManual } from './components/FormularioManual';
 import { AsistenteIA } from './components/AsistenteIA';
 
 function App() {
-  const departamentosDisponibles = getDepartamentos();
-  
+  const [cargando, setCargando] = useState(true);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [toasts, setToasts] = useState([]);
 
-  // Estados Datos
-  const [datosForm, setDatosForm] = useState(() => {
-    const saved = localStorage.getItem('formData');
-    return saved ? JSON.parse(saved) : {
-      nombreCliente: '', Departamento: '', Ciudad: '', tipoCliente: 'Persona Natural',
-      Volumen: 50, Largo: '', Ancho: '', Profundidad: '',
-      T_w: 30, T_a: '', HR: '', usa_manta: false,
-      Precio_kWh: 700, preferenciaCotizacion: 'AMBAS'
-    };
-  });
-
-  const [mensajesChat, setMensajesChat] = useState(() => {
-    const saved = localStorage.getItem('chatHistory');
-    return saved ? JSON.parse(saved) : [
-      { role: 'ia', texto: '¡Hola! 🌊 Soy Sol. ¿Cómo te llamas y de dónde nos escribes?' }
-    ];
-  });
-
+  // Estados Datos (Inicializados post-carga)
+  const [datosForm, setDatosForm] = useState(null);
+  const [mensajesChat, setMensajesChat] = useState([]);
+  
   const [ciudadesDisponibles, setCiudadesDisponibles] = useState([]);
   const [resultado, setResultado] = useState(null);
 
-  const contextoParaIA = {
-    datos: datosForm,
-    sistema: {
-      regionDetectada: getRegion(datosForm.Departamento),
-      climaAutomatico: !!(datosForm.T_a && datosForm.HR),
-      departamentosDisponibles: departamentosDisponibles
-    }
-  };
+  // Orquestador asíncrono
+  useEffect(() => {
+    cargarEcosistema().then((defaults) => {
+      const savedForm = localStorage.getItem('formData');
+      setDatosForm(savedForm ? JSON.parse(savedForm) : defaults);
 
-  useEffect(() => { localStorage.setItem('formData', JSON.stringify(datosForm)); }, [datosForm]);
-  useEffect(() => { localStorage.setItem('chatHistory', JSON.stringify(mensajesChat)); }, [mensajesChat]);
+      const savedChat = localStorage.getItem('chatHistory');
+      setMensajesChat(savedChat ? JSON.parse(savedChat) : [
+        { role: 'ia', texto: '¡Hola! 🌊 Soy Sol. ¿Cómo te llamas y de dónde nos escribes?' }
+      ]);
+      setCargando(false);
+    }).catch(err => console.error("Error DB:", err));
+  }, []);
+
+  // Persistencia y validaciones encadenadas
+  useEffect(() => { if (datosForm) localStorage.setItem('formData', JSON.stringify(datosForm)); }, [datosForm]);
+  useEffect(() => { if (!cargando) localStorage.setItem('chatHistory', JSON.stringify(mensajesChat)); }, [mensajesChat, cargando]);
 
   useEffect(() => {
-    if (datosForm.Departamento) setCiudadesDisponibles(getCiudadesPorDepartamento(datosForm.Departamento));
+    if (datosForm?.Departamento) setCiudadesDisponibles(getCiudadesPorDepartamento(datosForm.Departamento));
     else setCiudadesDisponibles([]);
-  }, [datosForm.Departamento]);
+  }, [datosForm?.Departamento]);
 
   useEffect(() => {
-    if (datosForm.Departamento && datosForm.Ciudad) {
+    if (datosForm?.Departamento && datosForm?.Ciudad) {
       const clima = getClima(datosForm.Departamento, datosForm.Ciudad);
       if (clima.found) {
          setDatosForm(prev => {
@@ -65,7 +57,7 @@ function App() {
          setDatosForm(prev => ({ ...prev, T_a: prev.T_a || 26, HR: prev.HR || 70 }));
       }
     }
-  }, [datosForm.Ciudad, datosForm.Departamento]);
+  }, [datosForm?.Ciudad, datosForm?.Departamento]);
 
   const agregarNotificacion = (mensaje) => {
     const id = Date.now();
@@ -116,6 +108,23 @@ function App() {
     }
   };
 
+  // Bloqueo de renderizado estructural
+  if (cargando || !datosForm) {
+    return <div style={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center' }}>Cargando sistema...</div>;
+  }
+
+  // Inicialización síncrona habilitada
+  const departamentosDisponibles = getDepartamentos();
+  
+  const contextoParaIA = {
+    datos: datosForm,
+    sistema: {
+      regionDetectada: getRegion(datosForm.Departamento),
+      climaAutomatico: !!(datosForm.T_a && datosForm.HR),
+      departamentosDisponibles: departamentosDisponibles
+    }
+  };
+
   return (
     <div className="app-container">
       
@@ -137,7 +146,7 @@ function App() {
             onCalcular={handleSubmit}
             agregarNotificacion={agregarNotificacion} 
             resultadoFinal={resultado} 
-            abrirManual={() => setModalAbierto(true)} // Pasamos la función para abrir modal desde el header
+            abrirManual={() => setModalAbierto(true)} 
           />
       </div>
 

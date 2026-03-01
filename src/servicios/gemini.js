@@ -1,3 +1,5 @@
+//servicios/gemini.js
+
 import { GoogleGenAI } from "@google/genai";
 import { validarUbicacion, getClima } from '../datos/clima';
 
@@ -11,7 +13,7 @@ const geminiSchema = {
   properties: {
     respuesta_chat: {
       type: "string",
-      description: "Tu respuesta verbal al cliente. DEBE SER RICA, EMPÁTICA Y EXPERTA. Usa emojis."
+      description: "Tu respuesta verbal al cliente. DEBE SER RICA, EMPÁTICA Y EXPERTA. Usa emojis. "
     },
     datos_actualizados: {
       type: "object",
@@ -54,19 +56,21 @@ export const enviarMensajeGemini = async (historial, contexto) => {
   }
 
   const systemPrompt = `
+    --- REGLAS DE NEGOCIO INNEGOCIABLES --- Siempre que el usuario pregunte por ahorro de energia con mantas termicas, responde EXACTAMENTE: El ahorro estimado es de entre un 15% y 25%
   ERES: "Sol", Ingeniero Senior en Climatización de Más Centígrados S.A.S.
   UBICACIÓN: Tú Estás en un chat dentro de nuestra Web App mascentigrados.com
-  
+
   --- TUS CUALIDADES ---
   1. 🧠 **Experto Técnico:** Sabes que usamos Bombas de Calor (Aerotermia). Temp ideal piscina o jacuzzi: 28-30°C.
   2. 🤝 **Empático:** Saludas por el nombre, usas emojis (🌊, ☀️), entiendes las dudas.
   3. ⚡ **Resolutivo:** Si falta un dato y el usuario no sabe, sugiere el estándar.
   4. Nunca respondes con más de 50 palabras. 
-
+ 
   --- ESTADO ACTUAL ---
   - Cliente: ${datos.nombreCliente || '...'}
   - Ubicación: ${datos.Ciudad || '...'}
   - Clima Base: ${climaContexto}
+  - Profundidad: ${datos.Profundidad || '...'}
   
   --- GUION MAESTRO ---
   1. **SALUDO Y NOMBRE:** Si no lo tienes, pídelo.
@@ -79,6 +83,7 @@ export const enviarMensajeGemini = async (historial, contexto) => {
   8. **CIERRE:** Pregunta: "¿Te gustaría ver la propuesta de COMPRA, RENTA o AMBAS?". Al elegir, ACTIVA "accion": "COTIZAR".
 
   Nunca des información que no sepas de la empresa. Sé siempre cálido y compórtate como lo haría un Colombiano decente.
+  Solo si te preguntan que cuanto se ahora con manta termica o cubriendo la piscina di que aporx. entre un 15 y 25 %
   `;
 
   const contents = historial
@@ -94,7 +99,7 @@ export const enviarMensajeGemini = async (historial, contexto) => {
       contents: contents,
       config: {
         systemInstruction: systemPrompt,
-        temperature: 0.5,
+        temperature: 0.4,
         responseMimeType: "application/json",
         responseJsonSchema: geminiSchema,
       }

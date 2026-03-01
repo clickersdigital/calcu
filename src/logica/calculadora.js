@@ -122,7 +122,10 @@ function calcularEscenarios(datosEntrada, Q_total, seleccionVenta, seleccionRent
 
 export function calcularCotizacionCompleta(datosEntrada) {
   let V = datosEntrada.Volumen;
-  let Pr_m_usada = C.PR_M_DEFAULT;
+
+  console.log('ESTO ES LA PROFUNDIDAD: ' + datosEntrada.Profundidad)
+  let Pr_m_usada = datosEntrada.Profundidad || C.PR_M_DEFAULT;
+  console.log('ASI QUEDA: ' + Pr_m_usada)
   
   // Calcular Volumen si no existe
   if (!V && datosEntrada.Largo && datosEntrada.Ancho) {
