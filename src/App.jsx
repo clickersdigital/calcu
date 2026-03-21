@@ -6,6 +6,7 @@ import { getDepartamentos, getCiudadesPorDepartamento, getClima } from './datos/
 import { getRegion } from './datos/tarifas';
 import { cargarEcosistema } from './servicios/firebase'; 
 import './App.css';
+import sonidoInicio from './assets/inicio.mp3';
 
 import { FormularioManual } from './components/FormularioManual';
 import { AsistenteIA } from './components/AsistenteIA';
@@ -22,6 +23,24 @@ function App() {
   const [ciudadesDisponibles, setCiudadesDisponibles] = useState([]);
   const [resultado, setResultado] = useState(null);
 
+  //Audio inicio
+  useEffect(() => {
+    const reproducir = () => {
+      // Instanciar aquí vincula la creación del medio a la interacción confiable
+      const audio = new Audio(sonidoInicio);
+      audio.play().catch(console.warn);
+    };
+
+    // capture: true intercepta en la fase de captura (antes del bubble)
+    window.addEventListener('pointerdown', reproducir, { once: true, capture: true });
+    window.addEventListener('keydown', reproducir, { once: true, capture: true });
+
+    return () => {
+      window.removeEventListener('pointerdown', reproducir, { capture: true });
+      window.removeEventListener('keydown', reproducir, { capture: true });
+    };
+  }, []);
+
   // Orquestador asíncrono
   useEffect(() => {
     cargarEcosistema().then((defaults) => {
@@ -35,6 +54,8 @@ function App() {
       setCargando(false);
     }).catch(err => console.error("Error DB:", err));
   }, []);
+
+  //
 
   // Persistencia y validaciones encadenadas
   useEffect(() => { if (datosForm) localStorage.setItem('formData', JSON.stringify(datosForm)); }, [datosForm]);
@@ -74,39 +95,42 @@ function App() {
     }));
   };
 
-  const handleSubmit = (e, preferenciaOverride = null) => {
-    if (e) e.preventDefault();
-    const preferenciaFinal = preferenciaOverride || datosForm.preferenciaCotizacion;
-    
-    if (!datosForm.Departamento || !datosForm.Ciudad) {
-       agregarNotificacion("⚠️ Faltan datos de ubicación");
-       return;
-    }
-    
-    const datosCliente = {
-      ...datosForm,
-      Volumen: parseFloat(datosForm.Volumen) || 0,
-      Largo: parseFloat(datosForm.Largo) || 0,
-      Ancho: parseFloat(datosForm.Ancho) || 0,
-      Profundidad: parseFloat(datosForm.Profundidad) || 0,
-      T_w: parseFloat(datosForm.T_w),
-      Precio_kWh: parseFloat(datosForm.Precio_kWh),
-      T_a: parseFloat(datosForm.T_a) || 26, 
-      HR: parseFloat(datosForm.HR) || 70
-    };
-
-    const calculo = calcularCotizacionCompleta(datosCliente);
-    
-    if (calculo.error) {
-        agregarNotificacion(`❌ ${calculo.error}`);
-    } else {
-      setResultado({ ...calculo, preferenciaUsuario: preferenciaFinal });
-      if(modalAbierto) {
-          setModalAbierto(false);
-          agregarNotificacion("✅ Datos manuales guardados");
+  const handleSubmit = (e, preferenciaOverride = null, datosOverride = null) => {
+      if (e) e.preventDefault();
+      
+      // Si viene de la IA usa datosOverride, si viene del modal usa datosForm
+      const datosBase = datosOverride || datosForm; 
+      const preferenciaFinal = preferenciaOverride || datosBase.preferenciaCotizacion;
+      
+      if (!datosBase.Departamento || !datosBase.Ciudad) {
+        agregarNotificacion("⚠️ Faltan datos de ubicación");
+        return;
       }
-    }
-  };
+      
+      const datosCliente = {
+        ...datosBase,
+        Volumen: parseFloat(datosBase.Volumen) || 0,
+        Largo: parseFloat(datosBase.Largo) || 0,
+        Ancho: parseFloat(datosBase.Ancho) || 0,
+        Profundidad: parseFloat(datosBase.Profundidad) || 0,
+        T_w: parseFloat(datosBase.T_w),
+        Precio_kWh: parseFloat(datosBase.Precio_kWh),
+        T_a: parseFloat(datosBase.T_a) || 26, 
+        HR: parseFloat(datosBase.HR) || 70
+      };
+
+      const calculo = calcularCotizacionCompleta(datosCliente);
+      
+      if (calculo.error) {
+          agregarNotificacion(`❌ ${calculo.error}`);
+      } else {
+        setResultado({ ...calculo, preferenciaUsuario: preferenciaFinal });
+        if(modalAbierto) {
+            setModalAbierto(false);
+            agregarNotificacion("✅ Datos manuales guardados");
+        }
+      }
+    };
 
   // Bloqueo de renderizado estructural
   if (cargando || !datosForm) {

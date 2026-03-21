@@ -209,24 +209,26 @@ export function AsistenteIA({ contextoGlobal, setDatosForm, mensajes, setMensaje
             agregarNotificacion(`💧 Volumen: ${datosLimpios.Volumen} m³`);
 
         // Actualizar Estado
-        setDatosForm(prev => {
-            const nuevoEstado = { ...prev, ...datosLimpios };
-            if (nuevoEstado.Largo && nuevoEstado.Ancho && !nuevoEstado.Volumen) { 
-                 const prof = nuevoEstado.Profundidad || 1.4; 
-                 nuevoEstado.Volumen = (nuevoEstado.Largo * nuevoEstado.Ancho * prof).toFixed(1);
-            }
-            return nuevoEstado;
-        });
+        // 1. Calcular mutación de estado en memoria aislada
+                const nuevoEstadoFormulario = { ...datosAnteriores, ...datosLimpios };
+                if (nuevoEstadoFormulario.Largo && nuevoEstadoFormulario.Ancho && !nuevoEstadoFormulario.Volumen) { 
+                    const prof = nuevoEstadoFormulario.Profundidad || 1.4; 
+                    nuevoEstadoFormulario.Volumen = (nuevoEstadoFormulario.Largo * nuevoEstadoFormulario.Ancho * prof).toFixed(1);
+                }
+                
+                // 2. Encolar render en React
+                setDatosForm(nuevoEstadoFormulario);
 
-        // Acción Final
-        if (datosLimpios.accion === "COTIZAR") {
-            const preferencia = datosLimpios.preferenciaCotizacion || 'AMBAS';
-            onCalcular(null, preferencia);
-            setMostrarResumen(true);
-        }
-    }
-    setCargando(false);
-  };
+                // 3. Acción Final: Inyectar la constante sincrónica al orquestador
+                if (datosLimpios.accion === "COTIZAR") {
+                    const preferencia = datosLimpios.preferenciaCotizacion || 'AMBAS';
+                    onCalcular(null, preferencia, nuevoEstadoFormulario); 
+                    setMostrarResumen(true);
+                }
+              
+            }
+            setCargando(false);
+        };
 
   const borrarMemoria = () => {
     if(confirm("¿Borrar historial y datos?")) {

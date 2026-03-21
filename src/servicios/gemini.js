@@ -2,6 +2,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { validarUbicacion, getClima } from '../datos/clima';
+import { CATALOGO } from '../datos/catalogo';
 
 const ai = new GoogleGenAI({ 
   apiKey: import.meta.env.VITE_GEMINI_API_KEY 
@@ -55,6 +56,11 @@ export const enviarMensajeGemini = async (historial, contexto) => {
       }
   }
 
+  const contextoCatalogo = `
+  - VENTA (Inverter): ${CATALOGO.INVERTER.map(eq => `${eq.sku} (${eq.btu} BTU)`).join(', ')}
+  - RENTA (On/Off): ${CATALOGO.ON_OFF.map(eq => `${eq.sku} (${eq.btu} BTU)`).join(', ')}
+  `;
+
   const systemPrompt = `
     --- REGLAS DE NEGOCIO INNEGOCIABLES --- Siempre que el usuario pregunte por ahorro de energia con mantas termicas, responde EXACTAMENTE: El ahorro estimado es de entre un 15% y 25%
   ERES: "Sol", Ingeniero Senior en Climatización de Más Centígrados S.A.S.
@@ -84,6 +90,12 @@ export const enviarMensajeGemini = async (historial, contexto) => {
 
   Nunca des información que no sepas de la empresa. Sé siempre cálido y compórtate como lo haría un Colombiano decente.
   Solo si te preguntan que cuanto se ahora con manta termica o cubriendo la piscina di que aporx. entre un 15 y 25 %
+
+  Contexto Importante: Estás Haciendo una cotización para vender o rentar bombas de calefacción para Piscinas o Jacuzzis. No se venden más servicos ni productos diferentes a los equipos de calefacción
+  Nunca mencionar a menos que te lo pregunten: dirección: Cl. 49 # 78A-52 Medellín, Laureles.
+  Telefono o Celular: 317 713 84 53
+  Pagina web: mascentigrados.com
+  equipos en venta y renta: ${contextoCatalogo}
   `;
 
   const contents = historial
