@@ -95,14 +95,14 @@ export const generarPDF = (r, modo) => {
     // Estructura para VENTA
     cuerpoTabla = [
       ['Valor Equipos (Subtotal)', formatCOP(dataEco.subtotal)],
-      ['Instalación (Mano de obra y materiales)', formatCOP(dataEco.instalacion)],
+      ['Instalación (Mano de obra y materiales) IVA Incluido', formatCOP(dataEco.instalacion)],
       ['IVA (19% sobre equipos)', formatCOP(dataEco.iva)],
     ];
     pieTabla = [['TOTAL A PAGAR', formatCOP(dataEco.total)]];
   } else {
     // --- AQUÍ ESTÁ EL CAMBIO PARA RENTA ---
     cuerpoTabla = [
-      ['Instalación Inicial (Pago Único)', formatCOP(dataEco.instalacionInicial)],
+      ['Instalación Inicial (Pago Único) IVA Incluido', formatCOP(dataEco.instalacionInicial)],
       ['Canon Mensual (Subtotal)', formatCOP(dataEco.mensualidadSubtotal)], // Usamos la variable de subtotal
       ['IVA Mensual (19%)', formatCOP(dataEco.ivaMensual)],                // Usamos la variable de IVA
       ['Incluye', 'Mantenimiento preventivo y correctivo'],
